@@ -49,8 +49,8 @@ st.markdown(
 # Basic text
 # -----------------------------
 st.title("Market Dashboard")
-st.write("간단 가격확인용 대시보드")
-st.caption("ver0.0 : No API. Using TradingView Widget only")
+st.write("간단 가격확인 대시보드")
+st.caption("ver0.01 : No API. Using TradingView Widget only")
 
 
 # -----------------------------
