@@ -6,19 +6,70 @@ st.set_page_config(
     layout="wide"
 )
 
+# -----------------------------
+# Page style
+# -----------------------------
+st.markdown(
+    """
+    <style>
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        max-width: 1500px;
+    }
+
+    h1 {
+        margin-bottom: 0.2rem;
+    }
+
+    div[data-testid="stMarkdownContainer"] p {
+        margin-bottom: 0.2rem;
+    }
+
+    .chart-title {
+        font-size: 1.45rem;
+        font-weight: 700;
+        margin-top: 0.5rem;
+        margin-bottom: 0.15rem;
+    }
+
+    .mini-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-top: 0.2rem;
+        margin-bottom: 0.1rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# -----------------------------
+# Basic text
+# -----------------------------
 st.title("Market Dashboard")
 st.write("간단 가격확인용 대시보드")
-st.info("ver0.0 : No API. Using TradingView Widget only")
+st.caption("ver0.0 : No API. Using TradingView Widget only")
 
 
 # -----------------------------
-# TradingView Widgets
+# Symbols
 # -----------------------------
+symbols = {
+    "USD/KRW": "FX_IDC:USDKRW",
+    "BTC/USD": "BITSTAMP:BTCUSD",
+    "Gold": "OANDA:XAUUSD",
+    "Silver": "OANDA:XAGUSD",
+}
 
-def tradingview_single_quote(symbol: str):
+
+# -----------------------------
+# TradingView widgets
+# -----------------------------
+def tradingview_single_quote(symbol: str, height: int = 90):
     html = f"""
-    <!-- TradingView Single Quote Widget BEGIN -->
-    <div class="tradingview-widget-container">
+    <div class="tradingview-widget-container" style="width:100%; height:{height}px;">
       <div class="tradingview-widget-container__widget"></div>
       <script type="text/javascript"
         src="https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js"
@@ -32,26 +83,20 @@ def tradingview_single_quote(symbol: str):
       }}
       </script>
     </div>
-    <!-- TradingView Single Quote Widget END -->
     """
-    components.html(html, height=120, scrolling=False)
+    components.html(html, height=height, scrolling=False)
 
 
-def tradingview_chart(symbol: str, height: int = 500):
+def tradingview_chart(symbol: str, height: int = 720):
     html = f"""
-    <!-- TradingView Advanced Chart Widget BEGIN -->
-    <div class="tradingview-widget-container" style="height:{height}px;width:100%">
-      <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
-      <div class="tradingview-widget-copyright">
-        <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
-          <span class="blue-text">Track all markets on TradingView</span>
-        </a>
-      </div>
+    <div class="tradingview-widget-container" style="width:100%; height:{height}px;">
+      <div class="tradingview-widget-container__widget" style="width:100%; height:{height}px;"></div>
       <script type="text/javascript"
         src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"
         async>
       {{
-        "autosize": true,
+        "width": "100%",
+        "height": {height},
         "symbol": "{symbol}",
         "interval": "D",
         "timezone": "Asia/Seoul",
@@ -64,73 +109,53 @@ def tradingview_chart(symbol: str, height: int = 500):
       }}
       </script>
     </div>
-    <!-- TradingView Advanced Chart Widget END -->
     """
-    components.html(html, height=height + 50, scrolling=False)
+    components.html(html, height=height, scrolling=False)
+
+
+def chart_block(title: str, symbol: str, height: int):
+    st.markdown(f"<div class='chart-title'>{title}</div>", unsafe_allow_html=True)
+    tradingview_chart(symbol, height=height)
 
 
 # -----------------------------
-# Symbols
+# Price summary
 # -----------------------------
+st.markdown("### 가격 요약")
 
-symbols = {
-    "USD/KRW": "FX_IDC:USDKRW",
-    "BTC/USD": "BITSTAMP:BTCUSD",
-    "Gold": "OANDA:XAUUSD",
-    "Silver": "OANDA:XAGUSD",
-}
-
-
-# -----------------------------
-# Simple Price Summary
-# -----------------------------
-
-st.subheader("가격 요약")
-
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4 = st.columns(4, gap="small")
 
 with col1:
-    st.caption("USD/KRW")
+    st.markdown("<div class='mini-title'>USD/KRW</div>", unsafe_allow_html=True)
     tradingview_single_quote(symbols["USD/KRW"])
 
 with col2:
-    st.caption("BTC/USD")
+    st.markdown("<div class='mini-title'>BTC/USD</div>", unsafe_allow_html=True)
     tradingview_single_quote(symbols["BTC/USD"])
 
 with col3:
-    st.caption("Gold")
+    st.markdown("<div class='mini-title'>Gold</div>", unsafe_allow_html=True)
     tradingview_single_quote(symbols["Gold"])
 
 with col4:
-    st.caption("Silver")
+    st.markdown("<div class='mini-title'>Silver</div>", unsafe_allow_html=True)
     tradingview_single_quote(symbols["Silver"])
 
 
-st.divider()
-
-
 # -----------------------------
-# Main Charts
+# Main charts
 # -----------------------------
+chart_block("USD/KRW", symbols["USD/KRW"], height=780)
+chart_block("BTC/USD", symbols["BTC/USD"], height=780)
 
-st.header("USD/KRW")
-tradingview_chart(symbols["USD/KRW"], height=2000)
+st.markdown("<div class='chart-title'>Gold / Silver</div>", unsafe_allow_html=True)
 
-st.divider()
-
-st.header("BTC/USD")
-tradingview_chart(symbols["BTC/USD"], height=2000)
-
-st.divider()
-
-st.header("Gold / Silver")
-
-gold_col, silver_col = st.columns(2)
+gold_col, silver_col = st.columns(2, gap="small")
 
 with gold_col:
-    st.subheader("Gold")
-    tradingview_chart(symbols["Gold"], height=700)
+    st.markdown("<div class='mini-title'>Gold</div>", unsafe_allow_html=True)
+    tradingview_chart(symbols["Gold"], height=580)
 
 with silver_col:
-    st.subheader("Silver")
-    tradingview_chart(symbols["Silver"], height=700)
+    st.markdown("<div class='mini-title'>Silver</div>", unsafe_allow_html=True)
+    tradingview_chart(symbols["Silver"], height=580)
