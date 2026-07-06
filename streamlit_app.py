@@ -15,7 +15,7 @@ st.markdown(
     .block-container {
         padding-top: 1rem;
         padding-bottom: 1rem;
-        max-width: 1500px;
+        max-width: 1600px;
     }
 
     h1 {
@@ -26,18 +26,25 @@ st.markdown(
         margin-bottom: 0.2rem;
     }
 
+    .section-title {
+        font-size: 1.55rem;
+        font-weight: 800;
+        margin-top: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+
     .chart-title {
-        font-size: 1.45rem;
+        font-size: 1.15rem;
         font-weight: 700;
-        margin-top: 0.5rem;
-        margin-bottom: 0.15rem;
+        margin-top: 0.25rem;
+        margin-bottom: 0.1rem;
     }
 
     .mini-title {
-        font-size: 1.05rem;
+        font-size: 0.95rem;
         font-weight: 700;
-        margin-top: 0.2rem;
-        margin-bottom: 0.1rem;
+        margin-top: 0.15rem;
+        margin-bottom: 0.05rem;
     }
     </style>
     """,
@@ -50,18 +57,53 @@ st.markdown(
 # -----------------------------
 st.title("Market Dashboard")
 st.write("간단 가격확인 대시보드")
-st.caption("ver0.01 : No API. Using TradingView Widget only")
+st.caption("ver0.02 : No API. Using TradingView Widget only")
 
 
 # -----------------------------
 # Symbols
 # -----------------------------
-symbols = {
+ASSETS = {
+    # FX
     "USD/KRW": "FX_IDC:USDKRW",
+    "JPY/KRW": "FX_IDC:JPYKRW",
+
+    # Crypto
     "BTC/USD": "BITSTAMP:BTCUSD",
+    "ETH/USD": "BITSTAMP:ETHUSD",
+    "HYPE/USDT": "KUCOIN:HYPEUSDT",
+
+    # Metals
     "Gold": "OANDA:XAUUSD",
     "Silver": "OANDA:XAGUSD",
+
+    # US Indices
+    "DJI": "TVC:DJI",
+    "S&P 500": "TVC:SPX",
+    "NASDAQ Composite": "NASDAQ:IXIC",
+
+    # Asia Indices
+    "KOSPI": "KRX:KOSPI",
+    "KOSDAQ": "KRX:KOSDAQ",
+    "NIKKEI 225": "TVC:NI225",
 }
+
+
+SUMMARY_ORDER = [
+    "USD/KRW",
+    "JPY/KRW",
+    "BTC/USD",
+    "ETH/USD",
+    "HYPE/USDT",
+    "Gold",
+    "Silver",
+    "DJI",
+    "S&P 500",
+    "NASDAQ Composite",
+    "KOSPI",
+    "KOSDAQ",
+    "NIKKEI 225",
+]
 
 
 # -----------------------------
@@ -87,7 +129,7 @@ def tradingview_single_quote(symbol: str, height: int = 90):
     components.html(html, height=height, scrolling=False)
 
 
-def tradingview_chart(symbol: str, height: int = 720):
+def tradingview_chart(symbol: str, height: int = 560):
     html = f"""
     <div class="tradingview-widget-container" style="width:100%; height:{height}px;">
       <div class="tradingview-widget-container__widget" style="width:100%; height:{height}px;"></div>
@@ -113,49 +155,85 @@ def tradingview_chart(symbol: str, height: int = 720):
     components.html(html, height=height, scrolling=False)
 
 
-def chart_block(title: str, symbol: str, height: int):
+def section_title(title: str):
+    st.markdown(f"<div class='section-title'>{title}</div>", unsafe_allow_html=True)
+
+
+def chart_title(title: str):
     st.markdown(f"<div class='chart-title'>{title}</div>", unsafe_allow_html=True)
-    tradingview_chart(symbol, height=height)
+
+
+def quote_card(asset_name: str):
+    st.markdown(f"<div class='mini-title'>{asset_name}</div>", unsafe_allow_html=True)
+    tradingview_single_quote(ASSETS[asset_name])
+
+
+def chart_card(asset_name: str, height: int = 560):
+    chart_title(asset_name)
+    tradingview_chart(ASSETS[asset_name], height=height)
+
+
+def render_quote_grid(asset_names, columns: int = 4):
+    for i in range(0, len(asset_names), columns):
+        row_assets = asset_names[i:i + columns]
+        cols = st.columns(columns, gap="small")
+
+        for col, asset_name in zip(cols, row_assets):
+            with col:
+                quote_card(asset_name)
+
+
+def render_chart_grid(asset_names, columns: int = 2, height: int = 560):
+    for i in range(0, len(asset_names), columns):
+        row_assets = asset_names[i:i + columns]
+        cols = st.columns(columns, gap="small")
+
+        for col, asset_name in zip(cols, row_assets):
+            with col:
+                chart_card(asset_name, height=height)
 
 
 # -----------------------------
 # Price summary
 # -----------------------------
-st.markdown("### 가격 요약")
-
-col1, col2, col3, col4 = st.columns(4, gap="small")
-
-with col1:
-    st.markdown("<div class='mini-title'>USD/KRW</div>", unsafe_allow_html=True)
-    tradingview_single_quote(symbols["USD/KRW"])
-
-with col2:
-    st.markdown("<div class='mini-title'>BTC/USD</div>", unsafe_allow_html=True)
-    tradingview_single_quote(symbols["BTC/USD"])
-
-with col3:
-    st.markdown("<div class='mini-title'>Gold</div>", unsafe_allow_html=True)
-    tradingview_single_quote(symbols["Gold"])
-
-with col4:
-    st.markdown("<div class='mini-title'>Silver</div>", unsafe_allow_html=True)
-    tradingview_single_quote(symbols["Silver"])
+section_title("가격 요약")
+render_quote_grid(SUMMARY_ORDER, columns=4)
 
 
 # -----------------------------
 # Main charts
 # -----------------------------
-chart_block("USD/KRW", symbols["USD/KRW"], height=780)
-chart_block("BTC/USD", symbols["BTC/USD"], height=780)
+section_title("FX")
+render_chart_grid(
+    ["USD/KRW", "JPY/KRW"],
+    columns=2,
+    height=560
+)
 
-st.markdown("<div class='chart-title'>Gold / Silver</div>", unsafe_allow_html=True)
+section_title("Crypto")
+render_chart_grid(
+    ["BTC/USD", "ETH/USD", "HYPE/USDT"],
+    columns=3,
+    height=540
+)
 
-gold_col, silver_col = st.columns(2, gap="small")
+section_title("Metals")
+render_chart_grid(
+    ["Gold", "Silver"],
+    columns=2,
+    height=540
+)
 
-with gold_col:
-    st.markdown("<div class='mini-title'>Gold</div>", unsafe_allow_html=True)
-    tradingview_chart(symbols["Gold"], height=580)
+section_title("US Market")
+render_chart_grid(
+    ["DJI", "S&P 500", "NASDAQ Composite"],
+    columns=3,
+    height=540
+)
 
-with silver_col:
-    st.markdown("<div class='mini-title'>Silver</div>", unsafe_allow_html=True)
-    tradingview_chart(symbols["Silver"], height=580)
+section_title("Korea / Japan Market")
+render_chart_grid(
+    ["KOSPI", "KOSDAQ", "NIKKEI 225"],
+    columns=3,
+    height=540
+)
